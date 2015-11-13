@@ -45,6 +45,7 @@ namespace JediConcentrate2
             menu.MenuItems.Add(new MenuItem("Exit"));
             menu.MenuItems[0].Click += About_Click;
             menu.MenuItems[1].Click += Exit_Click;
+            menu.Popup += Menu_Popup;
 
             icon = new NotifyIcon() { Icon = Properties.Resources.yoda, Visible = true, ContextMenu = menu };
 
@@ -59,6 +60,12 @@ namespace JediConcentrate2
             thPoll.Start();
 
             Application.Run();
+        }
+
+        private static void Menu_Popup(object sender, EventArgs e)
+        {
+            if(frm.Visible)
+                UnConcentrate();
         }
 
         private static void Exit_Click(object sender, EventArgs e)
@@ -98,7 +105,7 @@ namespace JediConcentrate2
                         _lastWin = _curWin;
                     });
                 }
-                Thread.Sleep(10);
+                Thread.Sleep(50);
             }
         }
 
