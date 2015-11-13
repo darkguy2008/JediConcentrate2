@@ -30,9 +30,27 @@ namespace JediConcentrate2
         static bool isRunning = true;
         static Thread thPoll;
 
+        static bool mutexCreated = false;
+        static Mutex mutex = new Mutex(true, @"Local\JediConcentrate2.exe", out mutexCreated);
+
         [STAThread]
         static void Main()
         {
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
+            if (!mutexCreated)
+            {
+                if (MessageBox.Show(
+                  "JediConcentrate2 is already running. Hotkeys cannot be shared between different instances. Are you sure you wish to run this second instance?",
+                  "JediConcentrate2 already running",
+                  MessageBoxButtons.YesNo,
+                  MessageBoxIcon.Question) != DialogResult.Yes)
+                {
+                    mutex.Close();
+                    return;
+                }
+            }
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
@@ -62,6 +80,21 @@ namespace JediConcentrate2
             Application.Run();
         }
 
+        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            mutex.Close();
+            if(hk != null)
+                hk.Unregister();
+            isRunning = false;
+            if(thPoll != null)
+                while (thPoll.ThreadState == System.Threading.ThreadState.Running)
+                {
+                    thPoll.Abort();
+                    Thread.Sleep(1000);
+                }
+            Application.Exit();
+        }
+
         private static void Menu_Popup(object sender, EventArgs e)
         {
             if(frm.Visible)
@@ -70,8 +103,14 @@ namespace JediConcentrate2
 
         private static void Exit_Click(object sender, EventArgs e)
         {
+            mutex.Close();
             hk.Unregister();
-            isRunning = false;
+            isRunning = false;            
+            while(thPoll.ThreadState == System.Threading.ThreadState.Running)
+            {
+                thPoll.Abort();
+                Thread.Sleep(1000);
+            }            
             Application.Exit();
         }
 
